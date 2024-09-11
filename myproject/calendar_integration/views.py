@@ -98,3 +98,21 @@ def update_event(request):
 
         except Exception as e:
             return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+def delete_event(request):
+    if request.method == 'DELETE':
+        try:
+            creds = get_google_creds()
+            service = build('calendar', 'v3', credentials=creds)
+
+            id = request.data.get('id')
+            if not id:
+                return Response({"error": "Event with this ID not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            service.events().delete(calendarId='primary', eventId=id).execute()
+            return Response({"message": "Event deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+        except Exception as e:
+            return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
