@@ -48,14 +48,14 @@
    *Método PUT*
     - Para alterar um evento, a lógica é quase a mesma do método POST, com as diferenças:
       url: `http://localhost:8000/update-event/`,
-     ```json
-     {
-       "id": "id do evento",
-       "summary": "título do evento",
-       "start_time": "2024-09-15T10:00:00-03:00",
-       "end_time": "2024-09-15T11:00:00-03:00",
-     }
-     ```
+        ```json
+        {
+          "id": "id do evento",
+          "summary": "título do evento",
+          "start_time": "2024-09-15T10:00:00-03:00",
+          "end_time": "2024-09-15T11:00:00-03:00",
+        }
+        ```
     - Nesse método, fica a critério do usuário o quê será alterado, exceto o id do evento.
 
    *Método DELETE*
