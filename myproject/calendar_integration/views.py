@@ -11,7 +11,7 @@ import os
 
 
 def get_google_creds():
-    cred_file = 'C:/Users/Gabriel/Desktop/API_GoogleCalendar/myproject/token.json'
+    cred_file = 'caminho/para/token.json'
     creds = None
     if os.path.exists(cred_file):
         creds = Credentials.from_authorized_user_file(cred_file, ['https://www.googleapis.com/auth/calendar'])
@@ -20,7 +20,7 @@ def get_google_creds():
         creds.refresh(Request())
 
     if not creds or not creds.valid:
-        subprocess.run(['python', 'C:/Users/Gabriel/Desktop/API_GoogleCalendar/myproject/generate_token.py'])
+        subprocess.run(['python', 'caminho/para/generate_token.py'])
         creds = Credentials.from_authorized_user_file(cred_file, ['https://www.googleapis.com/auth/calendar'])
 
     return creds
