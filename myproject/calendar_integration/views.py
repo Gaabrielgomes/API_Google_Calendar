@@ -44,3 +44,29 @@ def get_events(request):
 
         except Exception as e:
             return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def create_event(request):
+    if request.method == 'POST':
+        try:
+            creds = get_google_creds()
+            service = build('calendar', 'v3', credentials=creds)
+            
+            event = {
+                'summary': request.data.get('summary'),
+                'start': {
+                    'dateTime': request.data.get('start_time'),
+                    'timeZone': 'America/Fortaleza',
+                },
+                'end': {
+                    'dateTime': request.data.get('end_time'),
+                    'timeZone': 'America/Fortaleza',
+                },
+            }
+            
+            created_event = service.events().insert(calendarId='primary', body=event).execute()
+            return Response(created_event, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
