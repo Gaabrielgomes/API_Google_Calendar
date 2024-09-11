@@ -11,7 +11,7 @@ import os
 
 
 def get_google_creds():
-    cred_file = 'caminho/para/token.json'
+    cred_file = 'C:/Users/Gabriel/Desktop/API_GoogleCalendar/myproject/token.json'
     creds = None
     if os.path.exists(cred_file):
         creds = Credentials.from_authorized_user_file(cred_file, ['https://www.googleapis.com/auth/calendar'])
@@ -20,7 +20,7 @@ def get_google_creds():
         creds.refresh(Request())
 
     if not creds or not creds.valid:
-        subprocess.run(['python', 'caminho/para/generate_token.py'])
+        subprocess.run(['python', 'C:/Users/Gabriel/Desktop/API_GoogleCalendar/myproject/generate_token.py'])
         creds = Credentials.from_authorized_user_file(cred_file, ['https://www.googleapis.com/auth/calendar'])
 
     return creds
@@ -31,7 +31,6 @@ def get_events(request):
     if request.method == 'GET':
         try:
             creds = get_google_creds()
-            print(f'Creds token: {creds.token}')
             service = build('calendar', 'v3', credentials=creds)
             
             now = datetime.datetime.utcnow().isoformat() + 'Z'
@@ -42,8 +41,75 @@ def get_events(request):
 
             return Response(events_data, status=status.HTTP_200_OK)
 
-        except Exception as e:
-            return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_event_by_id(request, id):
+    if request.method == 'GET':
+        try:
+            creds = get_google_creds()
+            service = build('calendar', 'v3', credentials=creds)
+            
+            event = service.events().get(calendarId='primary', eventId=id).execute()
+            if not event:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            
+            return Response(event, status=status.HTTP_200_OK)
+        
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+
+@api_view(['GET'])
+def get_events_by_period(request, start, end):
+    if request.method == 'GET':
+        try:
+            creds = get_google_creds()
+            service = build('calendar', 'v3', credentials=creds)
+            
+            events_result = service.events().list(
+                calendarId='primary',
+                timeMin=start,
+                timeMax=end,
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()
+            
+            if not events_result:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
+            events = events_result.get('items', [])
+            return Response(events, status=status.HTTP_200_OK)
+        
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_events_by_summary(request, summary):
+    if request.method == 'GET':
+        try:
+            creds = get_google_creds()
+            service = build('calendar', 'v3', credentials=creds)
+            
+            now = datetime.datetime.utcnow().isoformat() + 'Z'
+            events_result = service.events().list(
+                calendarId='primary', timeMin=now, singleEvents=True, orderBy='startTime'
+            ).execute()
+            
+            events = events_result.get('items', [])
+            
+            filtered_events = [event for event in events if summary.lower() in event.get('summary', '').lower()]
+            
+            if not filtered_events:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            
+            return Response(filtered_events, status=status.HTTP_200_OK)
+        
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -71,7 +137,6 @@ def create_event(request):
         except Exception as e:
             return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 @api_view(['PUT'])
 def update_event(request):
     if request.method == 'PUT':
@@ -79,26 +144,21 @@ def update_event(request):
             creds = get_google_creds()
             service = build('calendar', 'v3', credentials=creds)
 
-            # Extrair ID do evento e novos dados do corpo da requisição
             id = request.data.get('id')
             if not id:
                 return Response({"error": "Event ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Buscar o evento pelo ID
             event = service.events().get(calendarId='primary', eventId=id).execute()
 
-            # Atualizar os dados do evento com base nas novas informações fornecidas
             event['summary'] = request.data.get('summary', event['summary'])
             event['start']['dateTime'] = request.data.get('start_time', event['start']['dateTime'])
             event['end']['dateTime'] = request.data.get('end_time', event['end']['dateTime'])
 
-            # Atualizar o evento
             updated_event = service.events().update(calendarId='primary', eventId=id, body=event).execute()
             return Response(updated_event, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @api_view(['DELETE'])
 def delete_event(request):
