@@ -70,3 +70,31 @@ def create_event(request):
 
         except Exception as e:
             return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PUT'])
+def update_event(request):
+    if request.method == 'PUT':
+        try:
+            creds = get_google_creds()
+            service = build('calendar', 'v3', credentials=creds)
+
+            # Extrair ID do evento e novos dados do corpo da requisição
+            id = request.data.get('id')
+            if not id:
+                return Response({"error": "Event ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Buscar o evento pelo ID
+            event = service.events().get(calendarId='primary', eventId=id).execute()
+
+            # Atualizar os dados do evento com base nas novas informações fornecidas
+            event['summary'] = request.data.get('summary', event['summary'])
+            event['start']['dateTime'] = request.data.get('start_time', event['start']['dateTime'])
+            event['end']['dateTime'] = request.data.get('end_time', event['end']['dateTime'])
+
+            # Atualizar o evento
+            updated_event = service.events().update(calendarId='primary', eventId=id, body=event).execute()
+            return Response(updated_event, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": f"An error occurred: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
