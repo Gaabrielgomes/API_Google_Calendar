@@ -37,12 +37,25 @@ def get_events(request):
             events_result = service.events().list(
                 calendarId='primary', timeMin=now, singleEvents=True,
                 orderBy='startTime').execute()
+
             events_data = events_result.get('items', [])
+            events_resume = []
 
-            return Response(events_data, status=status.HTTP_200_OK)
+            for event in events_data:
+                event_info = {
+                    'summary': event.get('summary', 'No title'),
+                    'description': event.get('description', 'No description'),
+                    'start': event.get('start', {}).get('dateTime', event.get('start', {}).get('date', 'Anytime')),
+                    'end': event.get('end', {}).get('dateTime', event.get('end', {}).get('date', 'Undefined')),
+                    'participants': [attendee.get('email') for attendee in event.get('attendees', [])],
+                    'id': event.get('id')
+                }
+                events_resume.append(event_info)
 
-        except:
-            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(events_resume, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
