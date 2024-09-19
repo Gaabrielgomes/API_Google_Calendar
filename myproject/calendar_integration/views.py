@@ -5,23 +5,21 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import datetime
-import pytz
 import subprocess
 import os
 
 
 def get_google_creds():
-    cred_file = 'C:/Users/Gabriel/Desktop/API_GoogleCalendar/myproject/token.json'
+    cred_file = 'C:/Users/Gabriel/Desktop/API_Google_Calendar/myproject/token.json'
     creds = None
     if os.path.exists(cred_file):
+        creds = Credentials.from_authorized_user_file(cred_file, ['https://www.googleapis.com/auth/calendar'])
+    else:
+        subprocess.run(['python', 'C:/Users/Gabriel/Desktop/API_Google_Calendar/myproject/generate_token.py'])
         creds = Credentials.from_authorized_user_file(cred_file, ['https://www.googleapis.com/auth/calendar'])
 
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
-
-    if not creds or not creds.valid:
-        subprocess.run(['python', 'C:/Users/Gabriel/Desktop/API_GoogleCalendar/myproject/generate_token.py'])
-        creds = Credentials.from_authorized_user_file(cred_file, ['https://www.googleapis.com/auth/calendar'])
 
     return creds
 
